@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SmartAnalyst M5 节点链路图（v5 · supervisor 收敛为 create_agent 封装）</title>
+</head>
+<body style="margin:0;padding:0;background:#fff;font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;">
+<div style="width:100%;box-sizing:border-box;padding:14px;">
+<svg viewBox="0 0 1380 1900" width="100%" style="display:block;" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="mblue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#2b5d8f"/></marker>
+    <marker id="morange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#e67e22"/></marker>
+    <marker id="mred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#c0392b"/></marker>
+    <marker id="mpurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#7a3fa0"/></marker>
+    <marker id="mgray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#9aa7b3"/></marker>
+    <marker id="mgold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#c9a227"/></marker>
+  </defs>
+
+  <!-- ============ 标题 ============ -->
+  <text x="44" y="48" font-size="22" font-weight="700" fill="#1f3a52">SmartAnalyst M5 节点链路图（v5 · supervisor 收敛为 create_agent 封装）</text>
+  <text x="44" y="72" font-size="14" fill="#6b7f92">强制主链（蓝）：查数规则 SQL → analysis 纯确定性计算（无 LLM）→ 成稿质检 · 增值层（金）：supervisor = create_agent 封装，LLM 自主调 5 个子 agent 工具 · 回环走两侧空区零交叉</text>
+
+  <!-- ============ 图例 ============ -->
+  <g font-size="13" fill="#44576a">
+    <path d="M60,108 L110,108" stroke="#2b5d8f" stroke-width="2.5"/>
+    <text x="120" y="112">强制主链（必走 · 规则查数 + 确定性计算）</text>
+    <path d="M360,108 L410,108" stroke="#e67e22" stroke-width="2.5"/>
+    <text x="420" y="112">replanner 补查环（≤3 轮）</text>
+    <path d="M640,108 L690,108" stroke="#c0392b" stroke-width="2.5"/>
+    <text x="700" y="112">fixer 修正环（≤2 轮）</text>
+    <path d="M880,108 L930,108" stroke="#c9a227" stroke-width="2.5"/>
+    <text x="940" y="112">增值层（supervisor 自主触发）</text>
+    <path d="M1180,108 L1220,108" stroke="#c9a227" stroke-width="2.5" stroke-dasharray="6,4"/>
+    <text x="1230" y="112">子 agent 结果汇入（gaps）</text>
+  </g>
+
+  <!-- ============ 主线节点（x 中心 520，节点 x=435 w=170 h=64） ============ -->
+  <!-- START -->
+  <circle cx="520" cy="190" r="20" fill="#2b5d8f"/>
+  <text x="520" y="196" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">START</text>
+
+  <!-- 1 task_parser S1 -->
+  <rect x="435" y="300" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="326" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">task_parser</text>
+  <text x="520" y="345" font-size="12" fill="#5a6d80" text-anchor="middle">LLM 解析意图/指标/时间 → TaskSchema</text>
+  <text x="590" y="322" font-size="11" fill="#2b5d8f" text-anchor="end">S1</text>
+
+  <!-- 2 route_intent 菱形（条件路由） -->
+  <polygon points="520,434 600,466 520,498 440,466" fill="#f1edf9" stroke="#7a3fa0" stroke-width="2"/>
+  <text x="520" y="471" font-size="13" font-weight="700" fill="#5a2d85" text-anchor="middle">route_intent</text>
+  <text x="520" y="490" font-size="10" fill="#7a5a9e" text-anchor="middle">规则三路分流</text>
+
+  <!-- 3 clarify_interrupt（左） -->
+  <rect x="130" y="434" width="170" height="64" rx="10" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
+  <text x="215" y="460" font-size="15" font-weight="700" fill="#7a6a20" text-anchor="middle">clarify_interrupt</text>
+  <text x="215" y="479" font-size="12" fill="#8a7835" text-anchor="middle">⏸ 人工补口径后回 planner</text>
+
+  <!-- 4 quick_answer（左下 · RAG 落点①） -->
+  <rect x="300" y="540" width="120" height="52" rx="10" fill="#f2f4f5" stroke="#9aa7b3" stroke-width="2"/>
+  <text x="360" y="563" font-size="14" font-weight="700" fill="#44576a" text-anchor="middle">quick_answer</text>
+  <text x="360" y="581" font-size="10" fill="#6b7f92" text-anchor="middle">RAG 直答 · 知识问答</text>
+
+  <!-- 5 planner S2（RAG 落点②） -->
+  <rect x="435" y="586" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="612" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">planner</text>
+  <text x="520" y="631" font-size="12" fill="#5a6d80" text-anchor="middle">指标定义表 → 规则拼 SQL</text>
+  <text x="520" y="645" font-size="10" fill="#2b5d8f" text-anchor="middle">L1-L4 按需漏斗 · L3 查口径 RAG 兜底</text>
+  <text x="590" y="608" font-size="11" fill="#2b5d8f" text-anchor="end">S2</text>
+
+  <!-- 6 query_executor -->
+  <rect x="435" y="722" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="748" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">query_executor</text>
+  <text x="520" y="767" font-size="12" fill="#5a6d80" text-anchor="middle">规则 SQL 执行 · 默认 1 实例</text>
+  <text x="590" y="744" font-size="11" fill="#2b5d8f" text-anchor="end">S2</text>
+
+  <!-- 7 join -->
+  <rect x="435" y="858" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="884" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">join</text>
+  <text x="520" y="903" font-size="12" fill="#5a6d80" text-anchor="middle">去重/分组/排序 · 带 source_ref</text>
+
+  <!-- 8 analysis（瘦身 · 纯确定性） -->
+  <rect x="435" y="994" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="1020" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">analysis</text>
+  <text x="520" y="1039" font-size="12" fill="#5a6d80" text-anchor="middle">派生公式+跨期配对（代码）</text>
+  <text x="520" y="1053" font-size="10" fill="#5a6d80" text-anchor="middle">纯确定性 · 无 LLM（归因已移交）</text>
+
+  <!-- 9 reflect S3 -->
+  <rect x="435" y="1170" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="1196" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">reflect</text>
+  <text x="520" y="1215" font-size="12" fill="#5a6d80" text-anchor="middle">查证据缺口（含 agent gaps）+ 双闸</text>
+  <text x="590" y="1192" font-size="11" fill="#2b5d8f" text-anchor="end">S3</text>
+
+  <!-- 10 replanner（左 · 补查环） -->
+  <rect x="130" y="1170" width="170" height="64" rx="10" fill="#fdf1e0" stroke="#e67e22" stroke-width="2"/>
+  <text x="215" y="1196" font-size="15" font-weight="700" fill="#c2531a" text-anchor="middle">replanner</text>
+  <text x="215" y="1215" font-size="12" fill="#b0661f" text-anchor="middle">补计划项 · 超限转 writer</text>
+  <text x="285" y="1192" font-size="11" fill="#e67e22" text-anchor="end">S3</text>
+
+  <!-- 11 writer S4 -->
+  <rect x="435" y="1330" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="1356" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">writer</text>
+  <text x="520" y="1375" font-size="12" fill="#5a6d80" text-anchor="middle">组织报告 · 数字只取已有结果</text>
+  <text x="590" y="1352" font-size="11" fill="#2b5d8f" text-anchor="end">S4</text>
+
+  <!-- 12 reviewer 强制 S4（质量门） -->
+  <rect x="435" y="1466" width="170" height="64" rx="10" fill="#fbe9e7" stroke="#c0392b" stroke-width="2"/>
+  <text x="520" y="1492" font-size="15" font-weight="700" fill="#a93226" text-anchor="middle">reviewer 强制</text>
+  <text x="520" y="1511" font-size="12" fill="#b0554c" text-anchor="middle">质量门 · 校验 source_ref</text>
+  <text x="590" y="1488" font-size="11" fill="#c0392b" text-anchor="end">S4</text>
+
+  <!-- 13 fixer（右 · 修正环） -->
+  <rect x="870" y="1466" width="170" height="64" rx="10" fill="#fbe9e7" stroke="#c0392b" stroke-width="2"/>
+  <text x="955" y="1492" font-size="15" font-weight="700" fill="#a93226" text-anchor="middle">fixer</text>
+  <text x="955" y="1511" font-size="12" fill="#b0554c" text-anchor="middle">按意见修正（≤2 轮）</text>
+
+  <!-- 14 report_confirm S5 -->
+  <rect x="435" y="1602" width="170" height="64" rx="10" fill="#fdf6e3" stroke="#c9a227" stroke-width="2"/>
+  <text x="520" y="1628" font-size="15" font-weight="700" fill="#7a6a20" text-anchor="middle">report_confirm</text>
+  <text x="520" y="1647" font-size="12" fill="#8a7835" text-anchor="middle">⏸ 人工确认报告方向</text>
+  <text x="590" y="1624" font-size="11" fill="#c9a227" text-anchor="end">S5</text>
+
+  <!-- 15 deliver S5 -->
+  <rect x="435" y="1738" width="170" height="64" rx="10" fill="#eef3f9" stroke="#2b5d8f" stroke-width="2"/>
+  <text x="520" y="1764" font-size="15" font-weight="700" fill="#1f3a52" text-anchor="middle">deliver</text>
+  <text x="520" y="1783" font-size="12" fill="#5a6d80" text-anchor="middle">幂等交付（写库/推送）</text>
+  <text x="590" y="1760" font-size="11" fill="#2b5d8f" text-anchor="end">S5</text>
+
+  <!-- END -->
+  <circle cx="520" cy="1868" r="20" fill="#2b5d8f"/>
+  <text x="520" y="1874" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">END</text>
+
+  <!-- ============ 增值层（右侧 · 金色 · supervisor 自主触发） ============ -->
+  <!-- supervisor（create_agent 封装） -->
+  <rect x="920" y="1130" width="190" height="64" rx="10" fill="#fdf8ee" stroke="#c9a227" stroke-width="2"/>
+  <text x="1015" y="1156" font-size="15" font-weight="700" fill="#8a6d1c" text-anchor="middle">supervisor</text>
+  <text x="1015" y="1175" font-size="12" fill="#a58a3c" text-anchor="middle">create_agent 封装 · LLM 自主调工具</text>
+
+  <!-- 子 agent 工具组（5 个 · 工具化注册，RAG 落点③） -->
+  <rect x="900" y="1266" width="230" height="150" rx="10" fill="#fff" stroke="#c9a227" stroke-width="1.5"/>
+  <text x="1015" y="1288" font-size="13" font-weight="700" fill="#8a6d1c" text-anchor="middle">子 agent 工具 ×5（LLM 自主路由）</text>
+  <text x="915" y="1312" font-size="11.5" fill="#8a6d1c">· analysis_agent   归因/gaps（rag+web）</text>
+  <text x="915" y="1332" font-size="11.5" fill="#8a6d1c">· benchmark_agent  行业对标（rag+web）</text>
+  <text x="915" y="1352" font-size="11.5" fill="#8a6d1c">· anomaly_agent    异常检测（rag+web）</text>
+  <text x="915" y="1372" font-size="11.5" fill="#8a6d1c">· forecast_agent   趋势预测（rag+web）</text>
+  <text x="915" y="1392" font-size="11.5" fill="#8a6d1c">· proposal_agent   方案产出（doc/pdf）</text>
+
+  <!-- ============ 连线：主链（蓝） ============ -->
+  <path d="M520,210 L520,300" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,364 L520,434" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,498 L520,586" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,650 L520,722" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,786 L520,858" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,922 L520,994" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1058 L520,1170" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1234 L520,1330" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1394 L520,1466" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1530 L520,1602" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1666 L520,1738" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+  <path d="M520,1802 L520,1848" stroke="#2b5d8f" stroke-width="2.5" fill="none" marker-end="url(#mblue)"/>
+
+  <!-- ============ 入口分流（紫）：clarify / resume / quick ============ -->
+  <!-- route_intent → clarify -->
+  <path d="M440,466 L300,466" stroke="#7a3fa0" stroke-width="2.5" fill="none" marker-end="url(#mpurple)"/>
+  <text x="370" y="456" font-size="12" font-weight="700" fill="#7a3fa0">口径不明 → clarify</text>
+  <!-- clarify → planner（resume） -->
+  <path d="M215,498 L215,560 L435,560 L435,586" stroke="#7a3fa0" stroke-width="2.5" fill="none" marker-end="url(#mpurple)"/>
+  <text x="225" y="540" font-size="11" fill="#7a3fa0">resume 回 planner</text>
+  <!-- route_intent → quick_answer -->
+  <path d="M520,498 L360,540" stroke="#9aa7b3" stroke-width="2" fill="none" marker-end="url(#mgray)"/>
+  <text x="372" y="522" font-size="11" fill="#6b7f92">quick</text>
+  <!-- quick_answer → END（最左缘，零交叉） -->
+  <path d="M360,592 L100,592 L100,1790 L500,1790 L500,1868" stroke="#9aa7b3" stroke-width="2" fill="none" marker-end="url(#mgray)"/>
+  <text x="60" y="1150" font-size="11" fill="#6b7f92" transform="rotate(-90 60 1150)">quick 直答交付（不经主链）</text>
+
+  <!-- ============ 补查环（橙） ============ -->
+  <!-- reflect → replanner -->
+  <path d="M435,1202 L300,1202" stroke="#e67e22" stroke-width="2.5" fill="none" marker-end="url(#morange)"/>
+  <text x="330" y="1188" font-size="12" font-weight="700" fill="#e67e22">有缺口 且 未超限</text>
+  <!-- replanner → query_executor（补计划项 → 重新执行） -->
+  <path d="M215,1234 L215,754 L435,754" stroke="#e67e22" stroke-width="2.5" fill="none" marker-end="url(#morange)"/>
+  <text x="222" y="980" font-size="11" fill="#e67e22" transform="rotate(-90 222 980)">补计划项 → 重新执行</text>
+
+  <!-- ============ 修正环（红） ============ -->
+  <!-- reviewer → fixer -->
+  <path d="M605,1498 L870,1498" stroke="#c0392b" stroke-width="2.5" fill="none" marker-end="url(#mred)"/>
+  <text x="700" y="1486" font-size="12" font-weight="700" fill="#c0392b">不通过 ≤2 轮</text>
+  <!-- fixer → writer -->
+  <path d="M955,1530 L955,1358 L605,1358" stroke="#c0392b" stroke-width="2.5" fill="none" marker-end="url(#mred)"/>
+  <text x="975" y="1410" font-size="11" fill="#c0392b" transform="rotate(-90 975 1410)">修正后回 writer 重写</text>
+
+  <!-- ============ 增值层连线（金） ============ -->
+  <!-- analysis → supervisor（LLM 自主判断） -->
+  <path d="M605,1026 L760,1026 L760,1162 L920,1162" stroke="#c9a227" stroke-width="2.5" fill="none" marker-end="url(#mgold)"/>
+  <text x="660" y="1012" font-size="11" font-weight="700" fill="#c9a227">LLM 自主判断</text>
+  <!-- supervisor → 子 agent 工具组（调） -->
+  <path d="M1015,1194 L1015,1266" stroke="#c9a227" stroke-width="2.5" fill="none" marker-end="url(#mgold)"/>
+  <text x="1030" y="1228" font-size="11" fill="#a58a3c">调 → 子 agent 工具</text>
+  <!-- 子 agent 结果 → reflect 汇入（虚线 · gaps 进 reflect 查缺口） -->
+  <path d="M900,1300 L900,1202 L605,1202" stroke="#c9a227" stroke-width="2" stroke-dasharray="6,4" fill="none" marker-end="url(#mgold)"/>
+  <text x="700" y="1245" font-size="11" fill="#a58a3c">结果/gaps 汇入 → reflect 查缺口</text>
+
+  <!-- ============ 条件路由标注 ============ -->
+  <text x="660" y="470" font-size="12" font-weight="700" fill="#1f3a52">route_after_parse：quick / clarify / analyze</text>
+  <text x="660" y="612" font-size="12" fill="#2b5d8f">planner 内部：L1 字典 → L2 别名 → L3 RAG → L4 记错（规则触发，不占 LLM）</text>
+  <text x="660" y="1220" font-size="12" fill="#1f3a52">route_after_reflect：无缺口/超限 → writer</text>
+  <text x="340" y="1448" font-size="12" fill="#1f3a52">route_after_validate：通过 → report_confirm（reviewer 单一出口，不可跳过）</text>
+
+  <!-- ============ 底部说明 ============ -->
+  <text x="44" y="1852" font-size="13" fill="#6b7f92">决策分层：强制主链（蓝）= 查数（planner 规则拼 SQL → query_executor 单实例执行）→ analysis 纯确定性计算（原子取数/派生公式/跨期配对，无 LLM）→ 成稿 → 质检，一步不能省，质量门是结构边、LLM 无权跳过。
+  </text>
+  <text x="44" y="1872" font-size="13" fill="#6b7f92">增值层（金）= supervisor 已收敛为 create_agent 封装（langchain）：5 个子 agent（归因/对标/异常/预测/方案）包装成工具，LLM 在 ReAct 循环里自主决定调不调、调哪个（简单问答不调，省 token）→ 结果/gaps 汇入 reflect 查缺口。
+  </text>
+  <text x="44" y="1892" font-size="13" fill="#6b7f92">RAG 三落点：① quick_answer（知识问答直答）② planner L3（字典未命中才查口径）③ 子 agent 工具（LLM 自主）。回环 = 有界重试（橙 ≤3 / 红 ≤2）；菱形 = 条件路由；黄 ⏸ = interrupt() 人工断点；灰 = quick 旁路；金虚线 = 子 agent 结果汇入。</text>
+</svg>
+</div>
+</body>
+</html>
