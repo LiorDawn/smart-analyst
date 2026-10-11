@@ -1,0 +1,12 @@
+/* ── 全局基础（页面级样式在各组件 scoped，此处只留变量与重置） ── */
+:root {
+  --bg: #0f1419; --panel: #161c24; --panel2: #1b232e; --line: #26303d;
+  --text: #e6edf3; --muted: #8b98a5; --accent: #3dd6c8; --accent2: #58a6ff;
+  --ok: #3fb950; --run: #d29922; --err: #f85149;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #app { height: 100%; }
+body {
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+}
